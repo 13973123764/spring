@@ -86,6 +86,13 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
      * @see #refresh
      */
     public GenericApplicationContext(@Nullable ApplicationContext parent){
+        // 先创建一个默认的 DefaultListableBeanFactory
+        this();
+        setParent(parent);
+    }
+
+
+    public void setParent(ApplicationContext parent) {
 
     }
 
