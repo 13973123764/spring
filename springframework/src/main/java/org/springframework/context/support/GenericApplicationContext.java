@@ -92,6 +92,11 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
     }
 
 
+    @Override
+    public void setId() {
+
+    }
+
     public void setParent(ApplicationContext parent) {
 
     }
