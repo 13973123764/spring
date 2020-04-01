@@ -22,7 +22,9 @@ import java.io.Closeable;
  */
 public interface ConfigurableApplicationContext extends ApplicationContext, Lifecycle, Closeable {
 
+
     /**
+     * asd
      * Any number of these characters are considered delimiters between
      * multiple context config paths in a single String value.
      * 这些字符串任何数量都被看做单个字符串中多个上下文配置路径的分隔符
