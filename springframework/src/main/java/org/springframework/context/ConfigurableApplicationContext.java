@@ -1,5 +1,6 @@
 package org.springframework.context;
 
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.lang.Nullable;
 
 import java.io.Closeable;
@@ -24,7 +25,6 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 
 
     /**
-     * asd
      * Any number of these characters are considered delimiters between
      * multiple context config paths in a single String value.
      * 这些字符串任何数量都被看做单个字符串中多个上下文配置路径的分隔符
@@ -75,10 +75,26 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 
     /**
      * Set the parent of this application context.
-     *
+     * 给当前应用上下文 设置父级
      * @param parent
      */
     void setParent(@Nullable ApplicationContext parent);
+
+    /**
+     * Set the {@code Environment} for this application context.
+     * 给当前应用上下文 设置环境
+     * @param environment
+     */
+    void setEnvironment(ConfigurableEnvironment environment);
+
+    /**
+     * Return the {@code Environment} for this application context in configurable
+     * 在配置中为当前上下文返回 环境
+     * @return
+     */
+    ConfigurableEnvironment getEnvironment();
+
+
 
 }
 

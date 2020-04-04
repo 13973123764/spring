@@ -23,4 +23,7 @@ public abstract class Assert {
     }
 
 
+    public static void isTrue(boolean b, String s) {
+
+    }
 }

@@ -31,6 +31,13 @@ import org.springframework.lang.Nullable;
  * its own child context that is independent of that of any other servlet.
  * 继承于父级上下文, 子级上下文的定义始终优先, 一个单例父容器可以被入口web应用所使用，
  * 每一个servlet 都有它自身的子上下文 且独立于任何其他servlet
+ *
+ * In addition to standard {@link org.springframework.beans.factory.BeanFactory}
+ * lifecycle capabilities, ApplicationContext implementations detect and invoke
+ * {@link ApplicationContextAware} beans as well as {@link ResourceLoaderAware},
+ * {@link ApplicationEventPublisherAware} and {@link MessageSourceAware} beans.
+ * 除了添加标准的bean工厂生命周期功能， 应用上下文 还实现检测和调用 ApplicationContextAware
+ * 以及ResourceLoaderAware、ApplicationEventPublisherAware、MessageSourceAware
  */
 public interface ApplicationContext extends EnvironmentCapable, ListableBeanFactory, HierarchicalBeanFactory,
                                         MessageSource, ApplicationEventPublisher, ResourcePatternResolver {
