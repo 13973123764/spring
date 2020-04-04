@@ -3,6 +3,7 @@ package org.springframework.context.support;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -129,6 +130,11 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 
     @Override
     public ApplicationContext getParent() {
+        return null;
+    }
+
+    @Override
+    public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
         return null;
     }
 
