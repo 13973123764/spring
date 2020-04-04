@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  *
  *
+ *
  */
 public class GenericApplicationContext extends AbstractApplicationContext implements BeanDefinitionRegistry {
 
@@ -82,13 +83,13 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
      * Create a new GenericApplicationContext with the given parent.
      * 当给定父类 时创建一个新的一般应用程序上下文
      * @param parent    父类
+     * @param beanFactory
      * @see #registerBEanDefinition
      * @see #refresh
      */
-    public GenericApplicationContext(@Nullable ApplicationContext parent){
-
+    public GenericApplicationContext(@Nullable ApplicationContext parent, @Nullable DefaultListableBeanFactory beanFactory){
+        this.beanFactory = beanFactory;
     }
-
 
     @Override
     public void close() throws IOException {

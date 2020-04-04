@@ -2,6 +2,7 @@ package org.springframework.beans.factory.support;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.lang.Nullable;
@@ -78,5 +79,30 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
 
+    }
+
+    @Override
+    public void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
+
+    }
+
+    @Override
+    public void registerAlias(String name, String alias) {
+
+    }
+
+    @Override
+    public void removeAlias(String alias) {
+
+    }
+
+    @Override
+    public boolean isAlias(String name) {
+        return false;
+    }
+
+    @Override
+    public String[] getAliases(String name) {
+        return new String[0];
     }
 }
