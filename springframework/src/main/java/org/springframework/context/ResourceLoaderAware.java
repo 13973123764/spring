@@ -1,7 +1,7 @@
 package org.springframework.context;
 
 import org.springframework.beans.factory.Aware;
-import org.springframework.io.ResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 
 /**
  * <Description>

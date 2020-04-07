@@ -1,6 +1,10 @@
 package org.springframework.context;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.io.ProtocolResolver;
 import org.springframework.lang.Nullable;
 
 import java.io.Closeable;
@@ -94,7 +98,22 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
      */
     ConfigurableEnvironment getEnvironment();
 
+    void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);
 
+    void addApplicationListener(ApplicationListener<?> listener);
+
+    void addProtocolResolver(ProtocolResolver resolver);
+
+    void refresh() throws BeansException, IllegalStateException;
+
+    void registerShutdownHook();
+
+    @Override
+    void close();
+
+    boolean isActive();
+
+    ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
 
 }
 

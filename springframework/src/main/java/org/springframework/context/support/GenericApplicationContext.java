@@ -9,7 +9,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -50,6 +50,10 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
     /** 默认list bean工厂 */
     @Nullable
     private final DefaultListableBeanFactory beanFactory;
+
+    @Nullable
+    private ResourceLoader resourceLoader;
+
     /** 自定义加载器 */
     private boolean customClassLoader = false;
     /** 原子类布尔型  是否刷新完成 */
@@ -71,7 +75,6 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
      * 从给定的bean工厂中创建一个新的 一般应用程序上下文
      * @param beanFactory 为当前上下文使用的 DefaultListableBeanFactory 实例
      * @see #registerBeanDefinition
-     * @see #regresh
      */
     public GenericApplicationContext(DefaultListableBeanFactory beanFactory){
         Assert.notNull(beanFactory, "BeanFactory must not be null");
@@ -83,7 +86,6 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
      * Create a new GenericApplicationContext with the given parent.
      * 当给定父类 时创建一个新的一般应用程序上下文
      * @param parent    父类
-     * @see #registerBEanDefinition
      * @see #refresh
      */
     public GenericApplicationContext(@Nullable ApplicationContext parent){
@@ -92,103 +94,29 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
         setParent(parent);
     }
 
+    /**
+     * Create a new GenericApplicationContext with the given DefaultListableBeanFactory.
+     * @param beanFactory the DefaultListableBeanFactory instance to use for this context
+     * @param parent the parent application context
+     * @see #registerBeanDefinition
+     * @see #refresh
+     */
+    public GenericApplicationContext(DefaultListableBeanFactory beanFactory, ApplicationContext parent) {
+        this(beanFactory);
+        setParent(parent);
+    }
 
+    /**
+     * Set the parent of this application context, also setting
+     * the parent of the internal BeanFactory accordingly.
+     * @see org.springframework.beans.factory.config.ConfigurableBeanFactory#setParentBeanFactory
+     */
     @Override
-    public void setId() {
-
-    }
-
-    public void setParent(ApplicationContext parent) {
-
+    public void setParent(@Nullable ApplicationContext parent) {
+        super.setParent(parent);
+        this.beanFactory.setParentBeanFactory(getInternalParentBeanFactory());
     }
 
 
-    @Override
-    public void close() throws IOException {
 
-    }
-
-    @Override
-    public String getId() {
-        return null;
-    }
-
-    @Override
-    public String getApplicationName() {
-        return null;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return null;
-    }
-
-    @Override
-    public long getStartupDate() {
-        return 0;
-    }
-
-    @Override
-    public ApplicationContext getParent() {
-        return null;
-    }
-
-    @Override
-    public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
-        return null;
-    }
-
-    @Override
-    public void publishEvent(Object event) {
-
-    }
-
-    public final DefaultListableBeanFactory getDefaultListableBeanFactory(){
-        return this.getDefaultListableBeanFactory();
-    }
-
-    @Override
-    public Resource[] getResources(String locationPattern) throws IOException {
-        return new Resource[0];
-    }
-
-    @Override
-    public boolean containsBeanDefinition(String beanName) {
-        return false;
-    }
-
-    @Override
-    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
-
-    }
-
-    @Override
-    public void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
-
-    }
-
-    @Override
-    public Environment getEnvironment() {
-        return null;
-    }
-
-    @Override
-    public void registerAlias(String name, String alias) {
-
-    }
-
-    @Override
-    public void removeAlias(String alias) {
-
-    }
-
-    @Override
-    public boolean isAlias(String name) {
-        return false;
-    }
-
-    @Override
-    public String[] getAliases(String name) {
-        return new String[0];
-    }
 }

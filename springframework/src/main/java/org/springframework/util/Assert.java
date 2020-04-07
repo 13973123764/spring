@@ -2,6 +2,10 @@ package org.springframework.util;
 
 import org.springframework.lang.Nullable;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.function.Supplier;
+
 /**
  * <Description>
  *
@@ -23,7 +27,71 @@ public abstract class Assert {
     }
 
 
-    public static void isTrue(boolean b, String s) {
+    public static void isTrue(boolean expression, String message) {
+        if (!expression) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 
+    public static void isTrue(boolean expression, Supplier<String> messageSupplier) {
+        if (!expression) {
+            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
+        }
+    }
+
+    @Nullable
+    private static String nullSafeGet(@Nullable Supplier<String> messageSupplier) {
+        return (messageSupplier != null ? messageSupplier.get() : null);
+    }
+
+    public static void state(boolean expression, String message) {
+        if (!expression) {
+            throw new IllegalStateException(message);
+        }
+    }
+
+    public static void isInstanceOf(Class<?> type, @Nullable Object obj, String message) {
+        if (!type.isInstance(obj)) {
+            instanceCheckFailed(type, obj, message);
+        }
+    }
+
+    private static void instanceCheckFailed(Class<?> type, @Nullable Object obj, @Nullable String msg) {
+        String className = (obj != null ? obj.getClass().getName() : "null");
+        String result = "";
+        boolean defaultMessage = true;
+        if (StringUtils.hasLength(msg)) {
+            if (endsWithSeparator(msg)) {
+                result = msg + " ";
+            }
+            else {
+                result = messageWithTypeName(msg, className);
+                defaultMessage = false;
+            }
+        }
+        if (defaultMessage) {
+            result = result + ("Object of class [" + className + "] must be an instance of " + type);
+        }
+        throw new IllegalArgumentException(result);
+    }
+
+    private static boolean endsWithSeparator(String msg) {
+        return (msg.endsWith(":") || msg.endsWith(";") || msg.endsWith(",") || msg.endsWith("."));
+    }
+
+    private static String messageWithTypeName(String msg, @Nullable Object typeName) {
+        return msg + (msg.endsWith(" ") ? "" : ": ") + typeName;
+    }
+
+    public static void hasLength(@Nullable String text, String message) {
+        if (!StringUtils.hasLength(text)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    public static void hasText(@Nullable String text, String message) {
+        if (!StringUtils.hasText(text)) {
+            throw new IllegalArgumentException(message);
+        }
     }
 }

@@ -40,7 +40,11 @@ public interface BeanDefinitionRegistry extends AliasRegistry {
      */
     void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException;
 
+    BeanDefinition getBeanDefnition(String beanName) throws NoSuchBeanDefinitionException;
 
+    String[] getBeanDefinitionNames();
 
+    int getBeanDefinitionCount();
 
+    boolean isBeanNameInUse(String beanName);
 }

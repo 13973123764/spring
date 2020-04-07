@@ -16,43 +16,12 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
         this.scanner = new ClassPathBeanDefinitionScanner(this);
     }
 
-    @Override
-    public void register(Class<?>... componentClasses) {
-
+    public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+        this();
+        register(componentClasses);
+        refresh();
     }
 
-    @Override
-    public void scan(String... basePackage) {
 
-    }
 
-    @Override
-    public Environment getEnvironment() {
-        return null;
-    }
-
-    @Override
-    public void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
-
-    }
-
-    @Override
-    public void registerAlias(String name, String alias) {
-
-    }
-
-    @Override
-    public void removeAlias(String alias) {
-
-    }
-
-    @Override
-    public boolean isAlias(String name) {
-        return false;
-    }
-
-    @Override
-    public String[] getAliases(String name) {
-        return new String[0];
-    }
 }

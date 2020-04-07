@@ -4,15 +4,9 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.io.ResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-
-import java.lang.annotation.Annotation;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * A bean definition scanner that detects bean candidates on the classpath

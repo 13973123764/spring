@@ -7,7 +7,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.PriorityOrdered;
-import org.springframework.io.ResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 
 /**
  * {@link BeanFactoryPostProcessor} used for bootstrapping processing of

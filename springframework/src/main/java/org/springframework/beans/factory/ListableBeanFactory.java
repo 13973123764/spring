@@ -1,6 +1,7 @@
 package org.springframework.beans.factory;
 
 import org.springframework.beans.BeansException;
+import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -39,7 +40,7 @@ import java.util.Map;
  * 这种手工注册的单子也一样。当然，BeanFactory也允许透明地访问这些特殊的bean。然而，在典型的场景中，
  * 所有bean都将由外部bean定义来定义，因此大多数应用程序不需要担心这种差异。
  */
-public interface ListableBeanFactory {
+public interface ListableBeanFactory extends BeanFactory{
 
 
     /**
@@ -69,11 +70,24 @@ public interface ListableBeanFactory {
     String[] getBeanDefinitionNames();
 
     /**
+     * Return the names of beans matching the given type (including subclasses)
+     * judging from either bean definitions or the value of {@code getObjectType}
+     * in the case of FactoryBeans.
+     * This method introspects top-level beans only. It does not
+     * check nested beans which might match the specified type as well.
+     * Does consider objects created by FactoryBeans, which means that FactoryBeans
+     * will get initialized. If the object created by the FactoryBean doesn't match,
+     * the raw FactoryBean itself will be matched against the type.
      *
+     * 返回给定类型匹配后的 bean名称, 从bean定义或FactoryBeans的getObjectType值判断
+     * 此方法仅对顶级bean进行内省。它不检查嵌套的bean，这些bean也可能与指定的类型匹配。
+     * 是否考虑对象在被 工厂bean创建后
      * @param type
      * @return
      */
     String[] getBeanNamesForType(ResolvableType type);
+
+    String[] getBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit);
 
     String[] getBeanNamesForType(@Nullable Class<?> type);
 
