@@ -120,11 +120,30 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
                               @Nullable final Object[] args, boolean typeCheckOnly) {
         // 转换bean名称
         final String beanName = transformedBeanName(name);
-
+        // 定义bean对象
         Object bean;
 
         // 急切地检查单例缓存中手动注册的单例对象。
         Object sharedInstance = getSingleton(beanName);
+        if (sharedInstance != null && args == null) {
+            bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
+        }
+
+    }
+
+
+    /**
+     * 获取给定bean实例的对象， 无论改bean实例化它自身 或者 它
+     * @param sharedInstance
+     * @param name
+     * @param beanName
+     * @param mbd
+     * @return
+     */
+    protected abstract Object getObjectForBeanInstance(Object sharedInstance, String name, String beanName, @Nullable RootBeanDefinition mbd){
+
+        BeanFactoryUtils.isFactoryDereference(name)
+
 
     }
 
