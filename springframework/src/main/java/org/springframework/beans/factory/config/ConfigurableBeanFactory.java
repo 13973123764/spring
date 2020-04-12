@@ -13,6 +13,9 @@ import org.springframework.lang.Nullable;
  */
 public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, SingletonBeanRegistry{
 
+    String SCOPE_SINGLETON = "singleton";
+
+    String SCOPE_PROTOTYPE = "prototype";
 
     void setBeanClassLoader(@Nullable ClassLoader beanClassLoader);
 

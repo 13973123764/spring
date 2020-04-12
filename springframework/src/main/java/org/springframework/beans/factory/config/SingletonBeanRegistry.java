@@ -14,4 +14,8 @@ public interface SingletonBeanRegistry {
 
     @Nullable
     Object getSingleton(String beanName);
+
+    boolean containsSingleton(String beanName);
+
+    Object getSingletonMutex();
 }

@@ -13,6 +13,8 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <Description>
@@ -29,6 +31,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     private Comparator<Object> dependencyComparator;
 
     private AutowireCandidateResolver autowireCandidateResolver = new SimpleAutowireCandidateResolver();
+
+    /** 定义bean对象的map  */
+    private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 
     @Nullable
     public Comparator<Object> getDependencyComparator() {
@@ -72,11 +77,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 
     @Override
-    public boolean containsBeanDefinition(String beanName) {
-        return false;
-    }
-
-    @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionStoreException {
 
     }
@@ -105,4 +105,19 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     public String[] getAliases(String name) {
         return new String[0];
     }
+
+
+    /**
+     * 检查是否包含bean
+     * @param beanName
+     * @return
+     */
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        Assert.notNull(beanName, "Bean name must not be null");
+        return this.beanDefinitionMap.containsKey(beanName);
+    }
+
+
+
 }

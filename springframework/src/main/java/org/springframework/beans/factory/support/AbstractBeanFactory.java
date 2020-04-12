@@ -1,13 +1,10 @@
 package org.springframework.beans.factory.support;
 
+import com.sun.corba.se.impl.io.TypeMismatchException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyEditorRegistrar;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.config.BeanExpressionResolver;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.beans.factory.config.Scope;
+import org.springframework.beans.factory.*;
+import org.springframework.beans.factory.config.*;
 import org.springframework.core.NamedThreadLocal;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.expression.TypeConverter;
@@ -18,6 +15,7 @@ import org.springframework.util.StringValueResolver;
 import java.beans.PropertyEditor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Policy;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -123,28 +121,245 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
         // 定义bean对象
         Object bean;
 
-        // 急切地检查单例缓存中手动注册的单例对象。
+        // 检查单例缓存中手动注册的单例对象。
         Object sharedInstance = getSingleton(beanName);
         if (sharedInstance != null && args == null) {
             bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
         }
+        else {
+            if (isPrototypeCurrentlyInCreation(beanName)) {
+                throw new BeanCurrentlyInCreationException(beanName);
+            }
+            // 检查当前是否已经存在该bean定义
+            BeanFactory parentBeanFactory = getParentBeanFactory();
+            if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
+                String nameToLookup = originalBeanName(name);
+                if (parentBeanFactory instanceof AbstractBeanFactory) {
+                    return ((AbstractBeanFactory) parentBeanFactory).doGetBean(
+                            nameToLookup, requiredType, args, typeCheckOnly);
+                }
+                else if (args != null) {
+                    // Delegation to parent with explicit args.
+                    return (T) parentBeanFactory.getBean(nameToLookup, args);
+                }
+                else {
+                    // No args -> delegate to standard getBean method.
+                    return parentBeanFactory.getBean(nameToLookup, requiredType);
+                }
+            }
+            if (!typeCheckOnly) {
+                markBeanAsCreated(beanName);
+            }
+            try {
+                final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+                checkMergedBeanDefinition(mbd, beanName, args);
+                String[] dependsOn = mbd.getDependsOn();
+                if (dependsOn != null) {
+                    for (String dep : dependsOn) {
+                        if (isDependent(beanName, dep)) {
+                            throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+                                    "Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
+                        }
+                        registerDependentBean(dep, beanName);
+                        try {
+                            getBean(dep);
+                        }
+                        catch (NoSuchBeanDefinitionException ex) {
+                            throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+                                    "'" + beanName + "' depends on missing bean '" + dep + "'", ex);
+                        }
+                    }
+                }
+                if (mbd.isSingleton()) {
+                    sharedInstance = getSingleton(beanName, () -> {
+                        try {
+                            return createBean(beanName, mbd, args);
+                        }
+                        catch (BeansException ex) {
+                            // Explicitly remove instance from singleton cache: It might have been put there
+                            // eagerly by the creation process, to allow for circular reference resolution.
+                            // Also remove any beans that received a temporary reference to the bean.
+                            destroySingleton(beanName);
+                            throw ex;
+                        }
+                    });
+                    bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
+                }
+                else if (mbd.isPrototype()) {
+                    // It's a prototype -> create a new instance.
+                    Object prototypeInstance = null;
+                    try {
+                        beforePrototypeCreation(beanName);
+                        prototypeInstance = createBean(beanName, mbd, args);
+                    }
+                    finally {
+                        afterPrototypeCreation(beanName);
+                    }
+                    bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
+                }
+                else {
+                    String scopeName = mbd.getScope();
+                    final Scope scope = this.scopes.get(scopeName);
+                    if (scope == null) {
+                        throw new IllegalStateException("No Scope registered for scope name '" + scopeName + "'");
+                    }
+                    try {
+                        Object scopedInstance = scope.get(beanName, () -> {
+                            beforePrototypeCreation(beanName);
+                            try {
+                                return createBean(beanName, mbd, args);
+                            }
+                            finally {
+                                afterPrototypeCreation(beanName);
+                            }
+                        });
+                        bean = getObjectForBeanInstance(scopedInstance, name, beanName, mbd);
+                    }
+                    catch (IllegalStateException ex) {
+                        throw new BeanCreationException(beanName,
+                                "Scope '" + scopeName + "' is not active for the current thread; consider " +
+                                        "defining a scoped proxy for this bean if you intend to refer to it from a singleton",
+                                ex);
+                    }
+                }
+            }
+            catch (BeansException ex) {
+                cleanupAfterBeanCreationFailure(beanName);
+                throw ex;
+            }
+        }
 
+        // Check if required type matches the type of the actual bean instance.
+        if (requiredType != null && !requiredType.isInstance(bean)) {
+            try {
+                T convertedBean = getTypeConverter().convertIfNecessary(bean, requiredType);
+                if (convertedBean == null) {
+                    throw new BeanNotOfRequiredTypeException(name, requiredType, bean.getClass());
+                }
+                return convertedBean;
+            }
+            catch (TypeMismatchException ex) {
+
+            }
+        }
+
+
+    }
+
+
+    @SuppressWarnings("unchecked")
+    protected void afterPrototypeCreation(String beanName) {
+        Object curVal = this.prototypesCurrentlyInCreation.get();
+        if (curVal instanceof String) {
+            this.prototypesCurrentlyInCreation.remove();
+        }
+        else if (curVal instanceof Set) {
+            Set<String> beanNameSet = (Set<String>) curVal;
+            beanNameSet.remove(beanName);
+            if (beanNameSet.isEmpty()) {
+                this.prototypesCurrentlyInCreation.remove();
+            }
+        }
+    }
+
+    protected void markBeanAsCreated(String beanName) {
+        if (!this.alreadyCreated.contains(beanName)) {
+            synchronized (this.mergedBeanDefinitions) {
+                if (!this.alreadyCreated.contains(beanName)) {
+                    // Let the bean definition get re-merged now that we're actually creating
+                    // the bean... just in case some of its metadata changed in the meantime.
+                    clearMergedBeanDefinition(beanName);
+                    this.alreadyCreated.add(beanName);
+                }
+            }
+        }
+    }
+
+    protected void clearMergedBeanDefinition(String beanName) {
+        this.mergedBeanDefinitions.remove(beanName);
+    }
+
+
+    protected boolean isPrototypeCurrentlyInCreation(String beanName) {
+        Object curVal = this.prototypesCurrentlyInCreation.get();
+        return (curVal != null &&
+                (curVal.equals(beanName) || (curVal instanceof Set && ((Set<?>) curVal).contains(beanName))));
+    }
+
+
+    protected void cleanupAfterBeanCreationFailure(String beanName) {
+        synchronized (this.mergedBeanDefinitions) {
+            this.alreadyCreated.remove(beanName);
+        }
+    }
+
+    protected void beforePrototypeCreation(String beanName) {
+        Object curVal = this.prototypesCurrentlyInCreation.get();
+        if (curVal == null) {
+            this.prototypesCurrentlyInCreation.set(beanName);
+        }
+        else if (curVal instanceof String) {
+            Set<String> beanNameSet = new HashSet<>(2);
+            beanNameSet.add((String) curVal);
+            beanNameSet.add(beanName);
+            this.prototypesCurrentlyInCreation.set(beanNameSet);
+        }
+        else {
+            Set<String> beanNameSet = (Set<String>) curVal;
+            beanNameSet.add(beanName);
+        }
     }
 
 
     /**
      * 获取给定bean实例的对象， 无论改bean实例化它自身 或者 它
-     * @param sharedInstance
+     * @param beanInstance
      * @param name
      * @param beanName
      * @param mbd
      * @return
      */
-    protected abstract Object getObjectForBeanInstance(Object sharedInstance, String name, String beanName, @Nullable RootBeanDefinition mbd){
+    protected Object getObjectForBeanInstance(Object beanInstance, String name, String beanName, @Nullable RootBeanDefinition mbd){
+        if (BeanFactoryUtils.isFactoryDereference(name)) {
+            if (beanInstance instanceof NullBean) {
+                return beanInstance;
+            }
+            if (!(beanInstance instanceof FactoryBean)) {
+                throw new BeanIsNotAFactoryException(beanName, beanInstance.getClass());
+            }
+        }
+        if (!(beanInstance instanceof FactoryBean) || BeanFactoryUtils.isFactoryDereference(name)) {
+            return beanInstance;
+        }
+        Object object = null;
+        if (mbd == null) {
+            object = getCachedObjectForFactoryBean(beanName);
+        }
+        if (object == null) {
+            FactoryBean<?> factory =(FactoryBean<?>) beanInstance;
+            if (mbd == null && containsBeanDefinition(beanName)) {
+                mbd = getMergedLocalBeanDefinition(beanName);
+            }
+            boolean synthetic = (mbd != null && mbd.isSynthetic());
+            object = getObjectFromFactoryBean(factory, beanName, !synthetic);
+        }
+        return object;
+    }
 
-        BeanFactoryUtils.isFactoryDereference(name)
+    protected String originalBeanName(String name) {
+        String beanName = transformedBeanName(name);
+        if (name.startsWith(FACTORY_BEAN_PREFIX)) {
+            beanName = FACTORY_BEAN_PREFIX + beanName;
+        }
+        return beanName;
+    }
 
+    protected void checkMergedBeanDefinition(RootBeanDefinition mbd, String beanName, @Nullable Object[] args)
+            throws BeanDefinitionStoreException {
 
+        if (mbd.isAbstract()) {
+            throw new BeanIsAbstractException(beanName);
+        }
     }
 
     /**
@@ -156,18 +371,59 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
         return canonicalName(BeanFactoryUtils.transformedBeanName(name));
     }
 
+    protected abstract boolean containsBeanDefinition(String beanName);
 
 
+    protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) throws BeansException{
+        RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
+        if (mbd != null) {
+            return mbd;
+        }
+        getMergedBeanDefinition(beanName, getBeanDefinition(beanName));
+    }
 
 
+    protected abstract BeanDefinition getBeanDefinition(String beanName) throws BeansException;
 
 
+    protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd) throws BeanDefinitionStoreException {
+        return getMergedBeanDefinition(beanName, bd, null);
+    }
 
 
+    /**
+     * 如果给定的bean定义对象是一个bean definition子类,则通过与父类合并
+     * 则从给定的bean定义返回一个 rootBeanDefinition
+     * @param beanName
+     * @param bd
+     * @param containingBd
+     * @return
+     * @throws BeanDefinitionStoreException
+     */
+    protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd, @Nullable BeanDefinition containingBd) throws BeanDefinitionStoreException{
+        synchronized (this.mergedBeanDefinitions) {
+            // bean定义根节点
+            RootBeanDefinition mbd = null;
+            if (containingBd == null) {
+                mbd = this.mergedBeanDefinitions.get(beanName);
+            }
+            if (mbd == null) {
+                String parentName = bd.getParentName();
+            }
+            if (bd.getParentName() == null) {
+                if (bd instanceof RootBeanDefinition) {
+                    mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
+                }
+                else {
+                    mbd = new RootBeanDefinition(bd);
+                }
+            }
+        }
+    }
 
 
-
-
+    protected abstract Object createBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
+            throws BeanCreationException;
 
 
 

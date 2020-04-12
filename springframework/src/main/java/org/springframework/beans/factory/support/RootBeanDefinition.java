@@ -1,5 +1,6 @@
 package org.springframework.beans.factory.support;
 
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.lang.Nullable;
 
 /**
@@ -15,8 +16,11 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
     @Nullable
     private volatile Object beanClass;
 
-    public RootBeanDefinition() {
+
+    RootBeanDefinition(BeanDefinition original){
+        super(original);
     }
+
     /**
      * Create a new RootBeanDefinition for a singleton.
      * 为单例创建一个新的 根bean定义

@@ -232,4 +232,31 @@ public abstract class ClassUtils {
         String packageName = className.substring(0, packageEndIndex);
         return packageName.replace(PACKAGE_SEPARATOR, PATH_SEPARATOR);
     }
+
+    public static String getQualifiedName(Class<?> clazz){
+        Assert.notNull(clazz, "Class must not be null");
+        return clazz.getTypeName();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
